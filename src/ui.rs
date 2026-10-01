@@ -5,12 +5,69 @@ use ratatui::{
     widgets::{Block, Paragraph},
 };
 
-use crate::{app::App, sprites};
+use crate::{app::App, ripple::RippleKind, sprites};
 
 pub fn draw(frame: &mut Frame, app: &App) {
     let inside = frame.area();
     let style = Style::default().fg(app.theme.text).bg(app.theme.water);
     frame.render_widget(Block::default().style(style), inside);
+
+    for row in (0..inside.height).step_by(4) {
+        for col in (0..inside.width).step_by(18) {
+            let seed = u32::from(row) * 173 + u32::from(col) * 59;
+            let phase = app.elapsed * 0.6 + seed as f32;
+            let drift = (phase.sin() * 2.0).round() as i32;
+            let x = i32::from(inside.x) + i32::from(col) + (seed % 11) as i32 + drift;
+            let y = inside.y + row + (seed % 3) as u16;
+            let brightness = ((phase.cos() + 1.0) as usize).min(2);
+            let width = 2 + seed % 3;
+
+            for offset in 0..width {
+                let x = x + offset as i32;
+                if x < i32::from(inside.x) || x >= i32::from(inside.right()) || y >= inside.bottom()
+                {
+                    continue;
+                }
+                if let Some(cell) = frame.buffer_mut().cell_mut((x as u16, y)) {
+                    cell.set_char('▁')
+                        .set_fg(app.theme.wavelets[brightness])
+                        .set_bg(app.theme.water);
+                }
+            }
+        }
+    }
+
+    for ripple in &app.ripples {
+        let phase = ripple.phase();
+        let (size, color_index) = match ripple.kind {
+            RippleKind::Wake { size } => (i32::from(size), phase),
+            RippleKind::Ambient => (1, (phase + 1).min(2)),
+        };
+        let radius = size + phase as i32;
+
+        for offset in -radius..=radius {
+            if (phase == 1 && offset.abs() < radius - 1) || (phase == 2 && offset.abs() < radius) {
+                continue;
+            }
+
+            let x = i32::from(inside.x) + ripple.position[0].floor() as i32 + offset;
+            let y = i32::from(inside.y) + ripple.position[1].floor() as i32;
+            if x < i32::from(inside.x)
+                || y < i32::from(inside.y)
+                || x >= i32::from(inside.right())
+                || y >= i32::from(inside.bottom())
+            {
+                continue;
+            }
+
+            if let Some(cell) = frame.buffer_mut().cell_mut((x as u16, y as u16)) {
+                let symbol = if offset.abs() == radius { '▔' } else { '▁' };
+                cell.set_char(symbol)
+                    .set_fg(app.theme.ripples[color_index])
+                    .set_bg(app.theme.water);
+            }
+        }
+    }
 
     if inside.height > 0 {
         let width = inside.width.min(14);
@@ -46,14 +103,17 @@ pub fn draw(frame: &mut Frame, app: &App) {
                 }
 
                 if let Some(cell) = frame.buffer_mut().cell_mut((x as u16, y as u16)) {
-                    let underneath = cell.bg;
                     let foreground = if top == 0 {
-                        underneath
+                        if cell.symbol() == "▀" {
+                            cell.fg
+                        } else {
+                            cell.bg
+                        }
                     } else {
                         palette[top as usize]
                     };
                     let background = if bottom == 0 {
-                        underneath
+                        cell.bg
                     } else {
                         palette[bottom as usize]
                     };

@@ -1,5 +1,6 @@
 mod app;
 mod duck;
+mod ripple;
 mod sprites;
 mod theme;
 mod ui;
@@ -40,7 +41,7 @@ fn run(mut terminal: DefaultTerminal) -> color_eyre::Result<()> {
         }
 
         if last_tick.elapsed() >= tick_rate {
-            app.update(last_tick.elapsed().as_secs_f32());
+            app.update(last_tick.elapsed().as_secs_f32(), terminal.size()?);
             last_tick = Instant::now();
         }
     }
