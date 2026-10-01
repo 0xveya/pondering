@@ -3,11 +3,13 @@ use ratatui::layout::Size;
 use crate::duck::{Duck, DuckKind, Follow, Wander};
 use crate::ripple::{Ripple, RippleKind};
 use crate::sprites;
+use crate::text::TextSize;
 use crate::theme::Theme;
 
 pub struct App {
     pub ducks: Vec<Duck>,
     pub theme: Theme,
+    pub clock_size: TextSize,
     pub ripples: Vec<Ripple>,
     pub elapsed: f32,
     wake_in: f32,
@@ -18,6 +20,7 @@ impl App {
     pub fn new(theme: Theme) -> Self {
         Self {
             theme,
+            clock_size: TextSize::Pixel(2),
             ducks: vec![
                 Duck::new(DuckKind::Mallard, [24.0, 7.0], Wander::new(3.0)),
                 Duck::new(

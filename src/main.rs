@@ -2,6 +2,7 @@ mod app;
 mod duck;
 mod ripple;
 mod sprites;
+mod text;
 mod theme;
 mod ui;
 

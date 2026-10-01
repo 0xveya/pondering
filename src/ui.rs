@@ -1,11 +1,13 @@
-use ratatui::{
-    Frame,
-    layout::Rect,
-    style::Style,
-    widgets::{Block, Paragraph},
-};
+use ratatui::{Frame, style::Style, widgets::Block};
 
-use crate::{app::App, ripple::RippleKind, sprites};
+use chrono::Local;
+
+use crate::{
+    app::App,
+    ripple::RippleKind,
+    sprites,
+    text::{TextLine, TextSize, draw_centered_lines},
+};
 
 pub fn draw(frame: &mut Frame, app: &App) {
     let inside = frame.area();
@@ -69,17 +71,6 @@ pub fn draw(frame: &mut Frame, app: &App) {
         }
     }
 
-    if inside.height > 0 {
-        let width = inside.width.min(14);
-        let message = Rect::new(
-            inside.x + (inside.width - width) / 2,
-            inside.y + inside.height / 2,
-            width,
-            1,
-        );
-        frame.render_widget(Paragraph::new("MUCH TO PONDER").style(style), message);
-    }
-
     for duck in &app.ducks {
         let sprite = sprites::get(duck.kind);
         let palette = app.theme.palette(duck.kind);
@@ -122,4 +113,27 @@ pub fn draw(frame: &mut Frame, app: &App) {
             }
         }
     }
+
+    let time = Local::now().format("%H:%M").to_string();
+    let quote = "tulln is giga kaka";
+
+    draw_centered_lines(
+        frame,
+        inside,
+        &[
+            TextLine {
+                text: quote,
+                size: TextSize::Normal,
+            },
+            TextLine {
+                text: time.as_str(),
+                size: app.clock_size,
+            },
+            TextLine {
+                text: "MUCH TO PONDER",
+                size: TextSize::Normal,
+            },
+        ],
+        style,
+    );
 }
