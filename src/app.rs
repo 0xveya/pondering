@@ -11,30 +11,25 @@ impl App {
         Self {
             theme,
             ducks: vec![
-                Duck::new(
-                    DuckKind::Mallard,
-                    [24.0, 7.0],
-                    Wander {
-                        speed: 3.0,
-                        heading: 0.0,
-                    },
-                ),
+                Duck::new(DuckKind::Mallard, [24.0, 7.0], Wander::new(3.0)),
                 Duck::new(
                     DuckKind::White,
                     [12.0, 9.0],
                     Follow {
                         target: 0,
                         speed: 4.0,
-                        distance: 8.0,
+                        distance: 14.0,
+                        separation: 12.0,
                     },
                 ),
                 Duck::new(
                     DuckKind::Duckling,
                     [3.0, 7.0],
                     Follow {
-                        target: 1,
+                        target: 0,
                         speed: 4.0,
-                        distance: 8.0,
+                        distance: 16.0,
+                        separation: 12.0,
                     },
                 ),
             ],
@@ -43,8 +38,8 @@ impl App {
 
     pub fn update(&mut self, dt: f32) {
         let positions: Vec<_> = self.ducks.iter().map(|duck| duck.position).collect();
-        for duck in &mut self.ducks {
-            duck.update(&positions, dt);
+        for (index, duck) in self.ducks.iter_mut().enumerate() {
+            duck.update(index, &positions, dt);
         }
     }
 }
