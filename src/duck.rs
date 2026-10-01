@@ -6,7 +6,13 @@ pub enum DuckKind {
 }
 
 pub trait Behavior {
-    fn velocity(&mut self, index: usize, flock: &[[f32; 2]], dt: f32) -> [f32; 2];
+    fn velocity(
+        &mut self,
+        index: usize,
+        flock: &[[f32; 2]],
+        dt: f32,
+        bounds: Option<[f32; 2]>,
+    ) -> [f32; 2];
 }
 
 pub struct Wander {
@@ -28,20 +34,50 @@ impl Wander {
 }
 
 impl Behavior for Wander {
-    fn velocity(&mut self, _index: usize, _flock: &[[f32; 2]], dt: f32) -> [f32; 2] {
+    fn velocity(
+        &mut self,
+        index: usize,
+        flock: &[[f32; 2]],
+        dt: f32,
+        bounds: Option<[f32; 2]>,
+    ) -> [f32; 2] {
         self.turn_in -= dt;
 
         if self.turn_in <= 0.0 {
-            self.target_heading = rand::random_range(-0.2..=0.2);
+            let angle = rand::random_range(-0.2..=0.2);
+            self.target_heading = if self.heading.cos() < 0.0 {
+                std::f32::consts::PI - angle
+            } else {
+                angle
+            };
             self.turn_in = rand::random_range(1.0..=3.0);
         }
 
-        self.heading += (self.target_heading - self.heading) * (dt * 2.0).min(1.0);
+        let turn = (self.target_heading - self.heading + std::f32::consts::PI)
+            .rem_euclid(std::f32::consts::TAU)
+            - std::f32::consts::PI;
+        self.heading += turn * (dt * 2.0).min(1.0);
 
-        [
+        let mut velocity = [
             self.heading.cos() * self.speed,
             self.heading.sin() * self.speed,
-        ]
+        ];
+        if let Some(bounds) = bounds {
+            let position = flock[index];
+            for axis in 0..2 {
+                let next = position[axis] + velocity[axis] * dt;
+                if bounds[axis] == 0.0 {
+                    velocity[axis] = 0.0;
+                } else if (next <= 0.0 && velocity[axis] < 0.0)
+                    || (next >= bounds[axis] && velocity[axis] > 0.0)
+                {
+                    velocity[axis] = -velocity[axis];
+                    self.heading = velocity[1].atan2(velocity[0]);
+                    self.target_heading = self.heading;
+                }
+            }
+        }
+        velocity
     }
 }
 
@@ -53,7 +89,13 @@ pub struct Follow {
 }
 
 impl Behavior for Follow {
-    fn velocity(&mut self, index: usize, flock: &[[f32; 2]], dt: f32) -> [f32; 2] {
+    fn velocity(
+        &mut self,
+        index: usize,
+        flock: &[[f32; 2]],
+        dt: f32,
+        _bounds: Option<[f32; 2]>,
+    ) -> [f32; 2] {
         if dt <= 0.0 {
             return [0.0, 0.0];
         }
@@ -128,8 +170,8 @@ impl Duck {
         }
     }
 
-    pub fn update(&mut self, index: usize, flock: &[[f32; 2]], dt: f32) {
-        let velocity = self.behavior.velocity(index, flock, dt);
+    pub fn update(&mut self, index: usize, flock: &[[f32; 2]], dt: f32, bounds: Option<[f32; 2]>) {
+        let velocity = self.behavior.velocity(index, flock, dt, bounds);
 
         if velocity[0] != 0.0 {
             self.facing_left = velocity[0] < 0.0;
@@ -137,5 +179,9 @@ impl Duck {
 
         self.position[0] += velocity[0] * dt;
         self.position[1] += velocity[1] * dt;
+        if let Some(bounds) = bounds {
+            self.position[0] = self.position[0].clamp(0.0, bounds[0]);
+            self.position[1] = self.position[1].clamp(0.0, bounds[1]);
+        }
     }
 }

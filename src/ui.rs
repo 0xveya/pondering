@@ -11,7 +11,9 @@ use crate::{
 
 pub fn draw(frame: &mut Frame, app: &App) {
     let inside = frame.area();
-    let style = Style::default().fg(app.theme.text).bg(app.theme.water);
+    let style = Style::default()
+        .fg(app.config.theme.text)
+        .bg(app.config.theme.water);
     frame.render_widget(Block::default().style(style), inside);
 
     for row in (0..inside.height).step_by(4) {
@@ -32,8 +34,8 @@ pub fn draw(frame: &mut Frame, app: &App) {
                 }
                 if let Some(cell) = frame.buffer_mut().cell_mut((x as u16, y)) {
                     cell.set_char('▁')
-                        .set_fg(app.theme.wavelets[brightness])
-                        .set_bg(app.theme.water);
+                        .set_fg(app.config.theme.wavelets[brightness])
+                        .set_bg(app.config.theme.water);
                 }
             }
         }
@@ -65,15 +67,15 @@ pub fn draw(frame: &mut Frame, app: &App) {
             if let Some(cell) = frame.buffer_mut().cell_mut((x as u16, y as u16)) {
                 let symbol = if offset.abs() == radius { '▔' } else { '▁' };
                 cell.set_char(symbol)
-                    .set_fg(app.theme.ripples[color_index])
-                    .set_bg(app.theme.water);
+                    .set_fg(app.config.theme.ripples[color_index])
+                    .set_bg(app.config.theme.water);
             }
         }
     }
 
     for duck in &app.ducks {
         let sprite = sprites::get(duck.kind);
-        let palette = app.theme.palette(duck.kind);
+        let palette = app.config.theme.palette(duck.kind);
         for (row, pair) in sprite.pixels.chunks(2).enumerate() {
             for col in 0..12 {
                 let source_col = if duck.facing_left { 11 - col } else { col };
@@ -117,23 +119,22 @@ pub fn draw(frame: &mut Frame, app: &App) {
     let time = Local::now().format("%H:%M").to_string();
     let quote = "tulln is giga kaka";
 
-    draw_centered_lines(
-        frame,
-        inside,
-        &[
-            TextLine {
-                text: quote,
-                size: TextSize::Normal,
-            },
-            TextLine {
-                text: time.as_str(),
-                size: app.clock_size,
-            },
-            TextLine {
-                text: "MUCH TO PONDER",
-                size: TextSize::Normal,
-            },
-        ],
-        style,
-    );
+    let mut lines = Vec::with_capacity(3);
+    if app.config.quote {
+        lines.push(TextLine {
+            text: quote,
+            size: TextSize::Normal,
+        });
+    }
+    if app.config.clock {
+        lines.push(TextLine {
+            text: time.as_str(),
+            size: app.config.clock_size,
+        });
+    }
+    lines.push(TextLine {
+        text: "MUCH TO PONDER",
+        size: TextSize::Normal,
+    });
+    draw_centered_lines(frame, inside, &lines, style);
 }
