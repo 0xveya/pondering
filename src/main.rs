@@ -9,6 +9,7 @@ use std::time::{Duration, Instant};
 use app::App;
 use crossterm::event::{self, Event, KeyCode};
 use ratatui::DefaultTerminal;
+use theme::Theme;
 
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
@@ -21,7 +22,7 @@ fn main() -> color_eyre::Result<()> {
 }
 
 fn run(mut terminal: DefaultTerminal) -> color_eyre::Result<()> {
-    let mut app = App::new();
+    let mut app = App::new(Theme::default());
 
     let tick_rate = Duration::from_millis(33);
     let mut last_tick = Instant::now();

@@ -1,12 +1,15 @@
 use crate::duck::{Duck, DuckKind, Follow, Wander};
+use crate::theme::Theme;
 
 pub struct App {
     pub ducks: Vec<Duck>,
+    pub theme: Theme,
 }
 
 impl App {
-    pub fn new() -> Self {
+    pub fn new(theme: Theme) -> Self {
         Self {
+            theme,
             ducks: vec![
                 Duck::new(
                     DuckKind::Mallard,

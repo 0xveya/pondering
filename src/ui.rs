@@ -5,11 +5,11 @@ use ratatui::{
     widgets::{Block, Paragraph},
 };
 
-use crate::{app::App, sprites, theme};
+use crate::{app::App, sprites};
 
 pub fn draw(frame: &mut Frame, app: &App) {
     let inside = frame.area();
-    let style = Style::default().fg(theme::TEXT).bg(theme::WATER);
+    let style = Style::default().fg(app.theme.text).bg(app.theme.water);
     frame.render_widget(Block::default().style(style), inside);
 
     if inside.height > 0 {
@@ -25,6 +25,7 @@ pub fn draw(frame: &mut Frame, app: &App) {
 
     for duck in &app.ducks {
         let sprite = sprites::get(duck.kind);
+        let palette = app.theme.palette(duck.kind);
         for (row, pair) in sprite.pixels.chunks(2).enumerate() {
             for col in 0..12 {
                 let source_col = if duck.facing_left { 11 - col } else { col };
@@ -49,12 +50,12 @@ pub fn draw(frame: &mut Frame, app: &App) {
                     let foreground = if top == 0 {
                         underneath
                     } else {
-                        sprite.palette[top as usize]
+                        palette[top as usize]
                     };
                     let background = if bottom == 0 {
                         underneath
                     } else {
-                        sprite.palette[bottom as usize]
+                        palette[bottom as usize]
                     };
                     cell.set_char('▀').set_fg(foreground).set_bg(background);
                 }
