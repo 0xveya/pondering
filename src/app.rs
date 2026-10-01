@@ -1,19 +1,47 @@
-use crate::fish::Fish;
+use crate::duck::{Duck, DuckKind, Follow, Wander};
 
 pub struct App {
-    pub fish: Vec<Fish>,
+    pub ducks: Vec<Duck>,
 }
 
 impl App {
     pub fn new() -> Self {
         Self {
-            fish: vec![Fish::new(10.0, 5.0, 6.0), Fish::new(30.0, 10.0, -4.0)],
+            ducks: vec![
+                Duck::new(
+                    DuckKind::Mallard,
+                    [24.0, 7.0],
+                    Wander {
+                        speed: 3.0,
+                        heading: 0.0,
+                    },
+                ),
+                Duck::new(
+                    DuckKind::White,
+                    [12.0, 9.0],
+                    Follow {
+                        target: 0,
+                        speed: 4.0,
+                        distance: 8.0,
+                    },
+                ),
+                Duck::new(
+                    DuckKind::Duckling,
+                    [3.0, 7.0],
+                    Follow {
+                        target: 1,
+                        speed: 4.0,
+                        distance: 8.0,
+                    },
+                ),
+            ],
         }
     }
 
     pub fn update(&mut self, dt: f32) {
-        for fish in &mut self.fish {
-            fish.update(dt);
+        let positions: Vec<_> = self.ducks.iter().map(|duck| duck.position).collect();
+        for duck in &mut self.ducks {
+            duck.update(&positions, dt);
         }
     }
 }

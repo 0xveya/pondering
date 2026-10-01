@@ -1,5 +1,6 @@
 mod app;
-mod fish;
+mod duck;
+mod sprites;
 mod theme;
 mod ui;
 
